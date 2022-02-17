@@ -24,4 +24,9 @@ public class ChartFile {
 
     @OneToMany(mappedBy = "chart")
     private Set<ChartPart> parts = new HashSet<>();
+
+    public ChartFile(Integer width, Integer height){
+        this.width = width;
+        this.height = height;
+    }
 }

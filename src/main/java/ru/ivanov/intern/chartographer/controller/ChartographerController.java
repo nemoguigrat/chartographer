@@ -20,21 +20,18 @@ public class ChartographerController {
     private final ChartFileRepository chartFileRepository;
 
     @RequestMapping(path = "/chartas/", method = RequestMethod.POST)
-    public ResponseEntity<String> createChart(@RequestParam Integer width,
+    public ResponseEntity<Long> createChart(@RequestParam Integer width,
                                               @RequestParam Integer height) {
-        chartFileRepository.save(new ChartFile());
-        chartFileRepository.findAll().forEach(x -> System.out.println(x.getId()));
-        return new ResponseEntity<>("asdkfj;lsdfkj", HttpStatus.CREATED);
-//        try {
-//            return new ResponseEntity<>(chartService.createChart(width, height), HttpStatus.CREATED);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//        }
+        try {
+            return new ResponseEntity<>(chartService.createChart(width, height), HttpStatus.CREATED);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.POST)
-    public ResponseEntity<?> savePartChart(@PathVariable String id, @RequestParam Integer x,
+    public ResponseEntity<?> savePartChart(@PathVariable Long id, @RequestParam Integer x,
                                            @RequestParam Integer y, @RequestParam Integer width,
                                            @RequestParam Integer height, @RequestBody byte[] image) {
         try {
@@ -47,14 +44,14 @@ public class ChartographerController {
     }
 
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.GET)
-    public MultipartFile getPartChart(@PathVariable String id,
+    public MultipartFile getPartChart(@PathVariable Long id,
                                       @RequestParam Integer x, @RequestParam Integer y,
                                       @RequestParam Integer width, @RequestParam Integer height) {
         return null;
     }
 
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.DELETE)
-    public void deletePartFile(@PathVariable String id) {
+    public void deletePartFile(@PathVariable Long id) {
 
     }
 
