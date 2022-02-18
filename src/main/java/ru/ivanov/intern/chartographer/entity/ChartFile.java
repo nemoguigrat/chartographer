@@ -22,7 +22,7 @@ public class ChartFile {
 
     private Integer height;
 
-    @OneToMany(mappedBy = "chart")
+    @OneToMany(mappedBy = "chart", cascade = CascadeType.ALL)
     private Set<ChartPart> parts = new HashSet<>();
 
     public ChartFile(Integer width, Integer height){

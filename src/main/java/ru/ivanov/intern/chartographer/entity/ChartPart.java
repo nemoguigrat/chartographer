@@ -25,7 +25,6 @@ public class ChartPart {
     private Integer y;
 
     @ManyToOne
-    @JoinColumn(name="part_id")
     private ChartFile chart;
 
     public ChartPart(int x, int y, int width, int height){

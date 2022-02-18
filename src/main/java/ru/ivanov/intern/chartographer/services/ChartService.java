@@ -37,8 +37,13 @@ public class ChartService {
     }
 
     //Выдает кусок файла
-    public void getChartPart(){
-
+    public byte[] getChartPart(Long id, int x, int y, int width, int height){
+        // найти карту в базе данных
+        // проверить, что размеры не выходят за изображение (валидация данных)
+        // проверить, какие изображения входят в область передачи
+        // вытащить эти изображения и в порядке их индексов сформировать изображение прямо в памяти
+        // вернуть потом байтов
+        return new byte[0];
     }
 
     //Вставляет кусок файла
@@ -48,8 +53,8 @@ public class ChartService {
             //получить размеры файла и валидироват значение validateCoordinate()
             ChartPart chartPart = chartPartRepository.save(new ChartPart(x, y, width, height));
             if (ChartUtil.saveBmp(chartPart.getId(), imageBytes)){
-                chartFile.getParts().add(chartPart);
-                chartFileRepository.save(chartFile);
+                chartPart.setChart(chartFile);
+                chartPartRepository.save(chartPart);
             }
             else {
                 // бросить исключение, что изображение не удается сохранить
@@ -71,9 +76,4 @@ public class ChartService {
     private boolean validateCoordinate(int x, int y, int fileWidth, int fileHeight){
         return false;
     }
-
-//    //Ищет путь к файлу
-//    private Path findFile(String id) throws Exception{
-//        return ChartUtil.getPath()
-//    }
 }

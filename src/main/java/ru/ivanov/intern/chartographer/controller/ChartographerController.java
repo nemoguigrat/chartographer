@@ -1,5 +1,6 @@
 package ru.ivanov.intern.chartographer.controller;
 
+import jdk.jfr.ContentType;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import ru.ivanov.intern.chartographer.repository.ChartFileRepository;
 import ru.ivanov.intern.chartographer.services.ChartService;
 import ru.ivanov.intern.chartographer.services.ChartService;
 
+import javax.imageio.stream.ImageOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
@@ -17,7 +19,6 @@ import java.util.Map;
 @AllArgsConstructor
 public class ChartographerController {
     private final ChartService chartService;
-    private final ChartFileRepository chartFileRepository;
 
     @RequestMapping(path = "/chartas/", method = RequestMethod.POST)
     public ResponseEntity<Long> createChart(@RequestParam Integer width,
@@ -44,10 +45,11 @@ public class ChartographerController {
     }
 
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.GET)
-    public MultipartFile getPartChart(@PathVariable Long id,
+    public ResponseEntity<?> getPartChart(@PathVariable Long id,
                                       @RequestParam Integer x, @RequestParam Integer y,
                                       @RequestParam Integer width, @RequestParam Integer height) {
-        return null;
+        byte[] bytes = chartService.getChartPart(id, x, y, width, height);
+        return ResponseEntity.ok().body(bytes);
     }
 
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.DELETE)
