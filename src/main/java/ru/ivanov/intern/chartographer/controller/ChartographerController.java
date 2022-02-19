@@ -1,17 +1,13 @@
 package ru.ivanov.intern.chartographer.controller;
 
-import jdk.jfr.ContentType;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import ru.ivanov.intern.chartographer.exeption.ChartNotFoundException;
+import ru.ivanov.intern.chartographer.exeption.ValidationException;
 import ru.ivanov.intern.chartographer.services.ChartService;
-import ru.ivanov.intern.chartographer.services.ChartService;
-
-import javax.imageio.stream.ImageOutputStream;
 import java.io.IOException;
-import java.util.Map;
 
 @RestController
 @AllArgsConstructor
@@ -23,7 +19,7 @@ public class ChartographerController {
                                               @RequestParam Integer height) {
         try {
             return new ResponseEntity<>(chartService.createChart(width, height), HttpStatus.CREATED);
-        } catch (Exception e) {
+        } catch (ValidationException | IOException e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -35,7 +31,10 @@ public class ChartographerController {
                                            @RequestParam Integer height, @RequestBody byte[] image) {
         try {
             chartService.insertChartPart(id, x, y, width, height, image);
-        } catch (Exception e) {
+        } catch (ChartNotFoundException | IOException e){
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (ValidationException e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -46,13 +45,27 @@ public class ChartographerController {
     public ResponseEntity<?> getPartChart(@PathVariable String id,
                                       @RequestParam Integer x, @RequestParam Integer y,
                                       @RequestParam Integer width, @RequestParam Integer height) {
-        byte[] bytes = chartService.getChartPart(id, x, y, width, height);
-        return ResponseEntity.ok().body(bytes);
+        try {
+            byte[] bytes = chartService.getChartPart(id, x, y, width, height);
+            return ResponseEntity.ok().body(bytes);
+        } catch (ChartNotFoundException | IOException e){
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (ValidationException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.DELETE)
-    public void deletePartFile(@PathVariable String id) {
-
+    public ResponseEntity<?> deletePartFile(@PathVariable String id) {
+        try {
+            chartService.deleteChart(id);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (ChartNotFoundException | IOException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
 }

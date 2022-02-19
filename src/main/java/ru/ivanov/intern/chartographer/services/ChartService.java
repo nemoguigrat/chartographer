@@ -50,11 +50,13 @@ public class ChartService {
             else
                 throw new ValidationException("Некорректные координаты.");
         } else
-            throw  new ValidationException("Некооретные размеры.");
+            throw new ValidationException("Некооретные размеры.");
     }
 
     //Удаляет файл
-    public void deleteChart(String id) {
+    public void deleteChart(String id) throws ChartNotFoundException, IOException {
+        if (!FilesUtil.deleteFile(id))
+            throw new ChartNotFoundException("Карта с id {" + id + "} не найдена.");
     }
 
     //Проверяет корректность переданных данных

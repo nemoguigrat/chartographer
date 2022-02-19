@@ -1,14 +1,9 @@
 package ru.ivanov.intern.chartographer.util;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import javax.imageio.ImageIO;
-import javax.imageio.stream.FileImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,6 +17,10 @@ public class FilesUtil {
                 new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB),
                 "bmp",
                 file);
+    }
+
+    public static boolean deleteFile(String id) throws IOException {
+        return Files.deleteIfExists(getPath(id));
     }
 
     public static void insertPartBmp(BufferedImage file, Path filePath, int x,
