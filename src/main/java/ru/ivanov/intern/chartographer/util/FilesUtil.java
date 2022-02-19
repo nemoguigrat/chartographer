@@ -34,6 +34,7 @@ public class FilesUtil {
     public static byte[] getFilePart(BufferedImage file, int x,
                                      int y, int width, int height) throws IOException {
         BufferedImage imagePart = file.getSubimage(x, y, width, height);
+
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ImageIO.write(imagePart, "bmp", stream);
         return stream.toByteArray();

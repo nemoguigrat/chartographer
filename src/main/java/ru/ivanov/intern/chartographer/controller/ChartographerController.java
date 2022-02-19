@@ -41,13 +41,13 @@ public class ChartographerController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.GET)
+    @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.GET, produces = "image/bmp")
     public ResponseEntity<?> getPartChart(@PathVariable String id,
                                       @RequestParam Integer x, @RequestParam Integer y,
                                       @RequestParam Integer width, @RequestParam Integer height) {
         try {
-            byte[] bytes = chartService.getChartPart(id, x, y, width, height);
-            return ResponseEntity.ok().body(bytes);
+            byte[] responseImageBytes = chartService.getChartPart(id, x, y, width, height);
+            return ResponseEntity.ok(responseImageBytes);
         } catch (ChartNotFoundException | IOException e){
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
