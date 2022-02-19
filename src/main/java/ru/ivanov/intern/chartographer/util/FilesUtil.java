@@ -4,12 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.FileImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +30,14 @@ public class FilesUtil {
         Graphics graphics = file.getGraphics();
         graphics.drawImage(imagePart, x, y, width, height, null);
         ImageIO.write(file, "bmp", filePath.toFile());
+    }
+
+    public static byte[] getFilePart(BufferedImage file, int x,
+                                     int y, int width, int height) throws IOException {
+        BufferedImage imagePart = file.getSubimage(x, y, width, height);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ImageIO.write(imagePart, "bmp", stream);
+        return stream.toByteArray();
     }
 
     public static boolean isBmpExists(String filename) {
