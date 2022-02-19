@@ -1,43 +1,32 @@
 package ru.ivanov.intern.chartographer.services;
 
 import lombok.AllArgsConstructor;
-import org.hibernate.id.UUIDGenerator;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import ru.ivanov.intern.chartographer.entity.ChartFile;
-import ru.ivanov.intern.chartographer.entity.ChartPart;
-import ru.ivanov.intern.chartographer.repository.ChartFileRepository;
-import ru.ivanov.intern.chartographer.repository.ChartPartRepository;
-import ru.ivanov.intern.chartographer.util.ChartUtil;
+import ru.ivanov.intern.chartographer.exeption.ChartNotFoundException;
+import ru.ivanov.intern.chartographer.exeption.ValidationException;
+import ru.ivanov.intern.chartographer.util.FilesUtil;
 
 import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
-import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
 @AllArgsConstructor
 public class ChartService {
-    private final ChartFileRepository chartFileRepository;
-    private final ChartPartRepository chartPartRepository;
 
     //Создает новое пустое изображение с заданными размерами и возвращает id изображения
-    public Long createChart(int width, int height){
-        //валидация значений
-        return chartFileRepository.save(new ChartFile(width, height)).getId();
+    public String createChart(int width, int height) throws ValidationException, IOException {
+        if (!validateSize(width, height))
+            throw new ValidationException("Не корректные размеры.");
+        String id = UUID.randomUUID().toString();
+        FilesUtil.createBmp(width, height, id);
+        return id;
     }
 
     //Выдает кусок файла
-    public byte[] getChartPart(Long id, int x, int y, int width, int height){
+    public byte[] getChartPart(String id, int x, int y, int width, int height) {
         // найти карту в базе данных
         // проверить, что размеры не выходят за изображение (валидация данных)
         // проверить, какие изображения входят в область передачи
@@ -47,33 +36,30 @@ public class ChartService {
     }
 
     //Вставляет кусок файла
-    public void insertChartPart(Long id, int x, int y, int width, int height, byte[] imageBytes) throws Exception {
-        if (chartFileRepository.existsById(id)){
-            ChartFile chartFile = chartFileRepository.findById(id).get();
-            //получить размеры файла и валидироват значение validateCoordinate()
-            ChartPart chartPart = chartPartRepository.save(new ChartPart(x, y, width, height));
-            if (ChartUtil.saveBmp(chartPart.getId(), imageBytes)){
-                chartPart.setChart(chartFile);
-                chartPartRepository.save(chartPart);
-            }
-            else {
-                // бросить исключение, что изображение не удается сохранить
-                chartPartRepository.delete(chartPart);
-            }
-        }
+    public void insertChartPart(String id, int x, int y, int width, int height, byte[] imageBytes)
+            throws ChartNotFoundException, ValidationException, IOException {
+        Path path = FilesUtil.getPath(id);
+        if (FilesUtil.isBmpExists(path)) {
+            BufferedImage chart = ImageIO.read(path.toFile());
+            if (validateCoordinate(x, y, chart.getWidth(), chart.getHeight()))
+                FilesUtil.insertPartBmp(chart, path, x, y, width, height, imageBytes);
+            else
+                throw new ValidationException("Некорректные координаты.");
+        } else
+            throw new ChartNotFoundException("Карта с id {" + id + "} не найдена.");
     }
 
     //Удаляет файл
-    public void deleteChart(String id){
+    public void deleteChart(String id) {
     }
 
     //Проверяет корректность переданных данных
-    private boolean validateSize(int width, int height){
-        return false;
+    private boolean validateSize(int width, int height) {
+        return width >= 0 && height >= 0 && width <= 20000 && height <= 50000;
     }
 
     //Проверяет корректность переданных координат
-    private boolean validateCoordinate(int x, int y, int fileWidth, int fileHeight){
-        return false;
+    private boolean validateCoordinate(int x, int y, int fileWidth, int fileHeight) {
+        return x <= fileWidth && y <= fileHeight && x >= 0 && y >= 0;
     }
 }
