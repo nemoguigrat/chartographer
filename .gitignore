@@ -33,5 +33,5 @@ build/
 .vscode/
 
 ### Project files ###
-.media/
+.main/media/
 *.bmp
