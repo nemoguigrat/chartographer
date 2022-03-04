@@ -7,7 +7,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,7 +23,7 @@ public class FilesUtil {
                 file);
     }
 
-    public static boolean deleteFile(String id) throws IOException{
+    public static boolean deleteFile(String id) throws IOException {
         return Files.deleteIfExists(getResource(id).getFile().toPath());
     }
 
@@ -41,7 +40,7 @@ public class FilesUtil {
         int partHeight = Math.min(file.getHeight() - y, height);
 
         BufferedImage imagePart = file.getSubimage(x, y, partWidth, partHeight);
-        if (partWidth != width || partHeight != height){
+        if (partWidth != width || partHeight != height) {
             BufferedImage resizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             resizedImage.getGraphics().drawImage(imagePart, 0, 0, null);
             imagePart = resizedImage;
