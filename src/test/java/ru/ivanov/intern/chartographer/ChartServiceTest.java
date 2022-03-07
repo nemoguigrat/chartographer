@@ -5,11 +5,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.core.io.ClassPathResource;
 import ru.ivanov.intern.chartographer.exeption.ChartNotFoundException;
 import ru.ivanov.intern.chartographer.exeption.ValidationException;
 import ru.ivanov.intern.chartographer.service.ChartService;
-import ru.ivanov.intern.chartographer.util.FilesUtil;
+import ru.ivanov.intern.chartographer.util.ChartFilesUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -24,8 +25,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 class ChartServiceTest {
-    private final ChartService chartService = new ChartService();
-    private final List<Path> filesToBeDeleted = new ArrayList<>();
+    private final ChartService chartService;
+
+    private final List<Path> filesToBeDeleted;
+
+    private final ChartFilesUtils chartFilesUtils;
+
+    public ChartServiceTest() throws IOException {
+        filesToBeDeleted = new ArrayList<>();
+        chartFilesUtils = new ChartFilesUtils(new DefaultApplicationArguments(
+                new ClassPathResource(".").getFile().getPath()));
+        chartService = new ChartService(chartFilesUtils);
+    }
 
     @ParameterizedTest
     @CsvSource({"0, 0", "-10, -10", "20001,50001"})
@@ -46,24 +57,24 @@ class ChartServiceTest {
     @CsvSource({"-1,-1", "10,10", "11,11"})
     public void getChartPart_THROW_VALIDATION_EXEPTION(int x, int y) {
         Assertions.assertThrows(ValidationException.class,
-                () -> chartService.getChartPart("test", 9, 9, 5001, 5001),
+                () -> chartService.getPartChart("test", 9, 9, 5001, 5001),
                 "Некорректные размеры.");
         Assertions.assertThrows(ValidationException.class,
-                () -> chartService.getChartPart("test", x, y, 10, 10),
+                () -> chartService.getPartChart("test", x, y, 10, 10),
                 "Некорректные координаты.");
     }
 
     @Test
     public void getChartPart_THROW_NOT_FOUND_EXEPTION() {
         Assertions.assertThrows(ChartNotFoundException.class,
-                () -> chartService.getChartPart(" ", 10, 10, 10, 10));
+                () -> chartService.getPartChart(" ", 10, 10, 10, 10));
     }
 
     @ParameterizedTest
     @CsvSource({"0,0,6,6", "0,0,12,12", "3,3,7,7"})
     public void getChartPart(int x, int y, int width, int height)
             throws IOException, ChartNotFoundException, ValidationException {
-        byte[] imageByteArray = chartService.getChartPart("test", x, y, width, height);
+        byte[] imageByteArray = chartService.getPartChart("test", x, y, width, height);
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageByteArray));
 
         Assertions.assertEquals(Color.white.getRGB(), image.getRGB(0, 0));
@@ -73,11 +84,11 @@ class ChartServiceTest {
     @ParameterizedTest
     @CsvSource({"0,0,6,6", "5,5,5,5", "3,3,7,7"})
     public void insertChartPart(int x, int y, int insertWidth, int insertHeight) throws IOException, ChartNotFoundException, ValidationException {
-        FilesUtil.createBmp(10, 10, "insert");
+        chartFilesUtils.createBmp(10, 10, "insert");
         Path path = getFilePath("insert");
         filesToBeDeleted.add(path);
         byte[] imageInsertByte = createTestImageToInsert(insertWidth, insertHeight);
-        chartService.insertChartPart("insert", x, y, insertWidth, insertHeight, imageInsertByte);
+        chartService.insertPartChart("insert", x, y, insertWidth, insertHeight, imageInsertByte);
         BufferedImage image = ImageIO.read(path.toFile());
 
         Assertions.assertEquals(Color.white.getRGB(),
@@ -90,7 +101,7 @@ class ChartServiceTest {
 
     @Test
     public void deleteChart() throws IOException {
-        FilesUtil.createBmp(10, 10, "delete");
+        chartFilesUtils.createBmp(10, 10, "delete");
         Path path = getFilePath("delete");
         Assertions.assertTrue(Files.exists(path));
         Assertions.assertDoesNotThrow(() -> chartService.deleteChart("delete"));
@@ -110,7 +121,7 @@ class ChartServiceTest {
     }
 
     private Path getFilePath(String id) throws IOException {
-        return Paths.get(new ClassPathResource(".").getFile().getPath(), "/media", id + ".bmp");
+        return Paths.get(new ClassPathResource(".").getFile().getPath(), id + ".bmp");
     }
 
     private byte[] createTestImageToInsert(int insertWidth, int insertHeight) throws IOException {

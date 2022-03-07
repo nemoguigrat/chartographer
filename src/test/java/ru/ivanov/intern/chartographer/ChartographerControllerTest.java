@@ -5,7 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -14,22 +15,25 @@ import ru.ivanov.intern.chartographer.controller.ChartographerController;
 import ru.ivanov.intern.chartographer.exeption.ChartNotFoundException;
 import ru.ivanov.intern.chartographer.exeption.ValidationException;
 import ru.ivanov.intern.chartographer.service.ChartService;
-
+import ru.ivanov.intern.chartographer.util.ChartFilesUtils;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 
+@WebAppConfiguration
 @ExtendWith(MockitoExtension.class)
-@SpringBootTest
 class ChartographerControllerTest {
-
-    private MockMvc mockMvc;
-
-    @Spy
-    private ChartService chartService;
 
     @InjectMocks
     private ChartographerController chartographerController;
+
+    @Mock
+    private ChartService chartService;
+
+    @MockBean
+    private ChartFilesUtils chartFilesUtils;
+
+    private MockMvc mockMvc;
 
     @BeforeEach
     public void setup() {
@@ -57,7 +61,7 @@ class ChartographerControllerTest {
     @Test
     void savePartChart_IMAGE_IS_INSERTED() throws Exception {
         String testId = UUID.randomUUID().toString();
-        doNothing().when(chartService).insertChartPart(
+        doNothing().when(chartService).insertPartChart(
                 eq(testId),
                 intThat(arg -> arg > 0 && arg <= 5000),
                 intThat(arg -> arg > 0 && arg <= 5000),
@@ -75,7 +79,7 @@ class ChartographerControllerTest {
     @Test
     void savePartChart_THROW_NOT_FOUND() throws Exception {
         String testId = UUID.randomUUID().toString();
-        doThrow(ChartNotFoundException.class).when(chartService).insertChartPart(
+        doThrow(ChartNotFoundException.class).when(chartService).insertPartChart(
                 eq(testId), anyInt(), anyInt(), anyInt(), anyInt(), any(byte[].class));
 
         mockMvc.perform(MockMvcRequestBuilders
@@ -88,7 +92,7 @@ class ChartographerControllerTest {
     @Test
     void savePartChart_THROW_VALIDATION() throws Exception {
         String testId = UUID.randomUUID().toString();
-        doThrow(ValidationException.class).when(chartService).insertChartPart(
+        doThrow(ValidationException.class).when(chartService).insertPartChart(
                 eq(testId), anyInt(), anyInt(), anyInt(), anyInt(), any(byte[].class));
 
         mockMvc.perform(MockMvcRequestBuilders
@@ -101,7 +105,7 @@ class ChartographerControllerTest {
     @Test
     void getPartChart() throws Exception {
         String testId = UUID.randomUUID().toString();
-        doReturn(new byte[]{1, 1, 1}).when(chartService).getChartPart(
+        doReturn(new byte[]{1, 1, 1}).when(chartService).getPartChart(
                 eq(testId), anyInt(), anyInt(), anyInt(), anyInt());
 
         mockMvc.perform(MockMvcRequestBuilders

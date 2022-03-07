@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.ivanov.intern.chartographer.exeption.ChartNotFoundException;
 import ru.ivanov.intern.chartographer.exeption.ValidationException;
 import ru.ivanov.intern.chartographer.service.ChartService;
-
 import java.io.IOException;
 
 @RestController
@@ -16,7 +15,7 @@ public class ChartographerController {
 
     @RequestMapping(path = "/chartas/", method = RequestMethod.POST)
     @ResponseStatus(value = HttpStatus.CREATED)
-    public String createChart(@RequestParam Integer width, @RequestParam Integer height)
+    public String createEmptyChart(@RequestParam Integer width, @RequestParam Integer height)
             throws IOException, ValidationException {
 
         return chartService.createChart(width, height);
@@ -27,7 +26,7 @@ public class ChartographerController {
                               @RequestParam Integer width, @RequestParam Integer height, @RequestBody byte[] image)
             throws IOException, ChartNotFoundException, ValidationException {
 
-        chartService.insertChartPart(id, x, y, width, height, image);
+        chartService.insertPartChart(id, x, y, width, height, image);
     }
 
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.GET, produces = "image/bmp")
@@ -35,11 +34,11 @@ public class ChartographerController {
                                @RequestParam Integer width, @RequestParam Integer height)
             throws IOException, ChartNotFoundException, ValidationException {
 
-        return chartService.getChartPart(id, x, y, width, height);
+        return chartService.getPartChart(id, x, y, width, height);
     }
 
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.DELETE)
-    public void deletePartFile(@PathVariable String id)
+    public void deleteChart(@PathVariable String id)
             throws IOException, ChartNotFoundException {
 
         chartService.deleteChart(id);
