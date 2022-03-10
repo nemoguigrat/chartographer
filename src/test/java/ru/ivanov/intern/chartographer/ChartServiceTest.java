@@ -23,6 +23,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 class ChartServiceTest {
     private final ChartService chartService;
@@ -46,7 +49,7 @@ class ChartServiceTest {
     }
 
     @Test
-    public void createChart_SAVE_IMAGE() throws IOException, ValidationException {
+    public void createChart() throws IOException, ValidationException {
         String fileId = chartService.createChart(10, 10);
         Path path = getFilePath(fileId);
         filesToBeDeleted.add(path);
@@ -107,6 +110,45 @@ class ChartServiceTest {
         Assertions.assertDoesNotThrow(() -> chartService.deleteChart("delete"));
         Assertions.assertFalse(Files.exists(path));
 
+    }
+
+    @Test
+    public void insertChartPart_MULTY() throws IOException, ChartNotFoundException, ValidationException {
+        chartFilesUtils.createBmp(100, 100, "insert1");
+        Path path = getFilePath("insert1");
+//        filesToBeDeleted.add(path);
+        byte[] imageInsertByte = createTestImageToInsert(50, 50);
+//        chartService.insertPartChart("insert1", 0, 0, 50, 50, imageInsertByte);
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
+        executor.execute(() ->
+        {
+            try {
+                chartService.insertPartChart("insert1", 0, 0, 50, 50, imageInsertByte);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        executor.execute(() ->
+        {
+            try {
+                chartService.insertPartChart("insert1", 50, 50, 50, 50, imageInsertByte);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        executor.execute(() ->
+        {
+            try {
+                chartService.insertPartChart("insert1", 25, 25, 50, 50, imageInsertByte);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+//        try {
+//            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @AfterEach
