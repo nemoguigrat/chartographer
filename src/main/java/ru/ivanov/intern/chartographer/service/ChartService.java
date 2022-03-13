@@ -4,58 +4,61 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.ivanov.intern.chartographer.exeption.ChartNotFoundException;
 import ru.ivanov.intern.chartographer.exeption.ValidationException;
-import ru.ivanov.intern.chartographer.util.ChartFilesUtils;
+import ru.ivanov.intern.chartographer.model.Chart;
+import ru.ivanov.intern.chartographer.model.ChartPart;
+import ru.ivanov.intern.chartographer.resository.ChartPartRepository;
+import ru.ivanov.intern.chartographer.resository.ChartRepository;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.FileImageInputStream;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
 public class ChartService {
-    private final ChartFilesUtils filesUtil;
+    private final FileService fileService;
+    private final ChartRepository chartRepository;
+    private final ChartPartRepository chartPartRepository;
 
     /**
-     * Создает харту с переданными размерами
-     * @param width ширина харты
-     * @param height высота харты
-     * @return уникальный идентификатор харты
-     * @throws ValidationException
-     * @throws IOException
+     * Создает карту с переданными размерами и сохраняет в репозиторий (данные хранятся в памяти)
+     * @param width ширина карты
+     * @param height высота карты
+     * @return уникальный идентификатор карты
+     * @throws ValidationException не корректные координаты
+     * @throws IOException ошибка чтения или записи файла
      */
-    public String createChart(int width, int height) throws ValidationException, IOException {
+    public int createChart(int width, int height) throws ValidationException, IOException {
         if (validateSize(width, height, 20000, 50000)) {
-            String id = UUID.randomUUID().toString();
-            filesUtil.createBmp(width, height, id);
-            return id;
+            Chart chart = chartRepository.save(new Chart(width, height));
+            fileService.createChartFolder(chart.getId());
+            return chart.getId();
         } else {
             throw new ValidationException("Некорректные размеры.");
         }
     }
 
     /**
-     * Вставляет переданный фрагмент в харту
-     * @param id уникальный идентификатор харты
-     * @param x координата харты, куда будет сохранен фрагмент
-     * @param y координата харты, куда будет сохранен фрагмент
+     * Сохраняет фрагмент на диске, а информацию о нем в репозитории (хранится в памяти)
+     * @param id уникальный идентификатор карты
+     * @param x координата карты, куда будет сохранен фрагмент
+     * @param y координата карты, куда будет сохранен фрагмент
      * @param width ширина передаваемого изображения
      * @param height высота передаваемого изображения
      * @param imageBytes передаваемое изображение в формате BMP
-     * @throws ChartNotFoundException
-     * @throws ValidationException
-     * @throws IOException
+     * @throws ChartNotFoundException файла с переданным id не существует
+     * @throws ValidationException не корректные координаты
+     * @throws IOException ошибка чтения или записи файла
      */
-    public void insertPartChart(String id, int x, int y, int width, int height, byte[] imageBytes)
+    public void insertPartChart(int id, int x, int y, int width, int height, byte[] imageBytes)
             throws ChartNotFoundException, ValidationException, IOException {
         if (validateSize(width, height, 20000, 50000)) {
-            Path imagePath = filesUtil.getFilePath(id);
-            BufferedImage chart = getChartImage(imagePath);
+            Chart chart = chartRepository.get(id);
             if (validateCoordinate(x, y, chart.getWidth(), chart.getHeight())) {
-                filesUtil.insertPartBmp(chart, imagePath.toFile(), x, y, width, height, imageBytes);
+                int partWidth = Math.min(chart.getWidth() - x, width);
+                int partHeight = Math.min(chart.getHeight() - y, height);
+
+                ChartPart chartPart = chartPartRepository.save(new ChartPart(x, y, partWidth, partHeight));
+                chart.getChartPart().add(chartPart);
+                fileService.saveImage(chart.getId(), chartPart.getId(), imageBytes);
             } else {
                 throw new ValidationException("Некорректные координаты.");
             }
@@ -65,24 +68,24 @@ public class ChartService {
     }
 
     /**
-     * Получает фрагмент харты с переданными координатами и размерами
-     * @param id уникальный идентификатор харты
+     * Получает фрагмент карты с переданными координатами и размерами
+     * @param id уникальный идентификатор карты
      * @param x левовый верхний угол фрагмента
      * @param y правый верхний угол фрагмента
      * @param width ширина возвращаемого изображения
      * @param height высота возвращаемого изображения
      * @return изобаржение в формате BMP (поток байт)
-     * @throws ChartNotFoundException
-     * @throws IOException
-     * @throws ValidationException
+     * @throws ChartNotFoundException файла с переданным id не существует
+     * @throws IOException ошибка чтения или записи файла
+     * @throws ValidationException не корректные координаты
      */
-    public byte[] getPartChart(String id, int x, int y, int width, int height)
+    public byte[] getPartChart(int id, int x, int y, int width, int height)
             throws ChartNotFoundException, IOException, ValidationException {
         if (validateSize(width, height, 5000, 5000)) {
-            BufferedImage chart = getChartImage(filesUtil.getFilePath(id));
+            Chart chart = chartRepository.get(id);
 
             if (validateCoordinate(x, y, chart.getWidth(), chart.getHeight())) {
-                return filesUtil.getFilePart(chart, x, y, width, height);
+                return fileService.createOutputImage(chart, x, y, width, height);
             } else {
                 throw new ValidationException("Некорректные координаты.");
             }
@@ -92,14 +95,15 @@ public class ChartService {
     }
 
     /**
-     * Удаляет харту по переданному идентификатору
+     * Удаляет карту по переданному идентификатору
      * @param id уникальный идентификатор изображения
-     * @throws ChartNotFoundException
-     * @throws IOException
+     * @throws ChartNotFoundException файла с переданным id не существует
+     * @throws IOException ошибка чтения или записи файла
      */
-    public void deleteChart(String id) throws ChartNotFoundException, IOException {
-        if (!filesUtil.deleteFile(id)) {
-            throw new ChartNotFoundException("Карта с id {" + id + "} не найдена.");
+    public void deleteChart(int id) throws ChartNotFoundException, IOException {
+        chartRepository.delete(id);
+        if (!fileService.deleteDirectory(id)) {
+            throw new ChartNotFoundException("Файла с id {" + id + "} не существует.");
         }
     }
 
@@ -109,20 +113,5 @@ public class ChartService {
 
     private boolean validateCoordinate(int x, int y, int fileWidth, int fileHeight) {
         return x < fileWidth && y < fileHeight && x >= 0 && y >= 0;
-    }
-
-    /**
-     * Получает {@code BufferedImage} по передаваемому пути к файлу, если такой файл существует
-     * @param path путь к файлу
-     * @return файл в виде изображения
-     * @throws IOException
-     * @throws ChartNotFoundException
-     */
-    private BufferedImage getChartImage(Path path) throws IOException, ChartNotFoundException {
-        if (filesUtil.isBmpExists(path)) {
-            return ImageIO.read(ImageIO.createImageInputStream(path.toFile()));
-        } else {
-            throw new ChartNotFoundException("Карта с id {" + path.getFileName() + "} не найдена.");
-        }
     }
 }

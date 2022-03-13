@@ -15,7 +15,7 @@ import ru.ivanov.intern.chartographer.controller.ChartographerController;
 import ru.ivanov.intern.chartographer.exeption.ChartNotFoundException;
 import ru.ivanov.intern.chartographer.exeption.ValidationException;
 import ru.ivanov.intern.chartographer.service.ChartService;
-import ru.ivanov.intern.chartographer.util.ChartFilesUtils;
+import ru.ivanov.intern.chartographer.service.FileService;
 
 import java.util.UUID;
 
@@ -32,7 +32,7 @@ class ChartographerControllerTest {
     private ChartService chartService;
 
     @MockBean
-    private ChartFilesUtils chartFilesUtils;
+    private FileService fileService;
 
     private MockMvc mockMvc;
 
@@ -51,19 +51,18 @@ class ChartographerControllerTest {
 
     @Test
     public void createChart_SAVE_IMAGE_RESPONSE() throws Exception {
-        doReturn("test").when(chartService).createChart(10, 10);
+        doReturn(1).when(chartService).createChart(10, 10);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/chartas/?width=10&height=10"))
                 .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.content().string("test"))
+                .andExpect(MockMvcResultMatchers.content().string("1"))
                 .andReturn().getResponse();
     }
 
     @Test
     void savePartChart_IMAGE_IS_INSERTED() throws Exception {
-        String testId = UUID.randomUUID().toString();
         doNothing().when(chartService).insertPartChart(
-                eq(testId),
+                anyInt(),
                 intThat(arg -> arg > 0 && arg <= 5000),
                 intThat(arg -> arg > 0 && arg <= 5000),
                 intThat(arg -> arg > 0 && arg <= 5000),
@@ -71,7 +70,7 @@ class ChartographerControllerTest {
                 any(byte[].class));
 
         mockMvc.perform(MockMvcRequestBuilders
-                .post("/chartas/" + testId + "/?x=10&y=10&width=10&height=10")
+                .post("/chartas/1/?x=10&y=10&width=10&height=10")
                 .contentType("image/bmp")
                 .content(new byte[]{1, 1, 1}))
                 .andExpect(MockMvcResultMatchers.status().isOk());
@@ -81,10 +80,10 @@ class ChartographerControllerTest {
     void savePartChart_THROW_NOT_FOUND() throws Exception {
         String testId = UUID.randomUUID().toString();
         doThrow(ChartNotFoundException.class).when(chartService).insertPartChart(
-                eq(testId), anyInt(), anyInt(), anyInt(), anyInt(), any(byte[].class));
+                anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any(byte[].class));
 
         mockMvc.perform(MockMvcRequestBuilders
-                .post("/chartas/" + testId + "/?x=10&y=10&width=10&height=10")
+                .post("/chartas/1/?x=10&y=10&width=10&height=10")
                 .contentType("image/bmp")
                 .content(new byte[]{1, 1, 1}))
                 .andExpect(MockMvcResultMatchers.status().isNotFound());
@@ -92,12 +91,11 @@ class ChartographerControllerTest {
 
     @Test
     void savePartChart_THROW_VALIDATION() throws Exception {
-        String testId = UUID.randomUUID().toString();
         doThrow(ValidationException.class).when(chartService).insertPartChart(
-                eq(testId), anyInt(), anyInt(), anyInt(), anyInt(), any(byte[].class));
+                anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any(byte[].class));
 
         mockMvc.perform(MockMvcRequestBuilders
-                .post("/chartas/" + testId + "/?x=10&y=10&width=10&height=10")
+                .post("/chartas/1/?x=10&y=10&width=10&height=10")
                 .contentType("image/bmp")
                 .content(new byte[]{1, 1, 1}))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
@@ -105,22 +103,20 @@ class ChartographerControllerTest {
 
     @Test
     void getPartChart() throws Exception {
-        String testId = UUID.randomUUID().toString();
         doReturn(new byte[]{1, 1, 1}).when(chartService).getPartChart(
-                eq(testId), anyInt(), anyInt(), anyInt(), anyInt());
+                anyInt(), anyInt(), anyInt(), anyInt(), anyInt());
 
         mockMvc.perform(MockMvcRequestBuilders
-                .get("/chartas/" + testId + "/?x=10&y=10&width=10&height=10"))
+                .get("/chartas/1/?x=10&y=10&width=10&height=10"))
                 .andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     @Test
     void deletePartFile() throws Exception {
-        String testId = UUID.randomUUID().toString();
-        doNothing().when(chartService).deleteChart(eq(testId));
+        doNothing().when(chartService).deleteChart(anyInt());
 
         mockMvc.perform(MockMvcRequestBuilders
-                .delete("/chartas/" + testId + "/"))
+                .delete("/chartas/1/"))
                 .andExpect(MockMvcResultMatchers.status().isOk());
     }
 }

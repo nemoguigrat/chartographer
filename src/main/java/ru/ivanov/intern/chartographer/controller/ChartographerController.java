@@ -19,13 +19,12 @@ public class ChartographerController {
      * @param width ширина харты
      * @param height высота харты
      * @return id изображения в строковом представлении
-     * @throws IOException
-     * @throws ValidationException
+     * @throws ValidationException не корректные данные
      */
     @RequestMapping(path = "/chartas/", method = RequestMethod.POST)
     @ResponseStatus(value = HttpStatus.CREATED)
-    public String createEmptyChart(@RequestParam Integer width, @RequestParam Integer height)
-            throws IOException, ValidationException {
+    public Integer createEmptyChart(@RequestParam Integer width, @RequestParam Integer height)
+            throws ValidationException, IOException {
 
         return chartService.createChart(width, height);
     }
@@ -38,12 +37,12 @@ public class ChartographerController {
      * @param width ширина передаваемого изображения
      * @param height высота передаваемого изображения
      * @param image передаваемое изображение в формате BMP
-     * @throws IOException
-     * @throws ChartNotFoundException
-     * @throws ValidationException
+     * @throws IOException ошибка чтения или записи файла
+     * @throws ChartNotFoundException карта не найдена
+     * @throws ValidationException не корректные данные
      */
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.POST)
-    public void savePartChart(@PathVariable String id, @RequestParam Integer x, @RequestParam Integer y,
+    public void savePartChart(@PathVariable Integer id, @RequestParam Integer x, @RequestParam Integer y,
                               @RequestParam Integer width, @RequestParam Integer height, @RequestBody byte[] image)
             throws IOException, ChartNotFoundException, ValidationException {
 
@@ -58,12 +57,12 @@ public class ChartographerController {
      * @param width ширина возвращаемого изображения
      * @param height высота возвращаемого изображения
      * @return изобаржение в формате BMP (поток байт)
-     * @throws IOException
-     * @throws ChartNotFoundException
-     * @throws ValidationException
+     * @throws IOException ошибка чтения или записи файла
+     * @throws ChartNotFoundException карта не найдена
+     * @throws ValidationException не корректные данные
      */
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.GET, produces = "image/bmp")
-    public byte[] getPartChart(@PathVariable String id, @RequestParam Integer x, @RequestParam Integer y,
+    public byte[] getPartChart(@PathVariable Integer id, @RequestParam Integer x, @RequestParam Integer y,
                                @RequestParam Integer width, @RequestParam Integer height)
             throws IOException, ChartNotFoundException, ValidationException {
 
@@ -73,11 +72,11 @@ public class ChartographerController {
     /**
      * Удаляет харту с переданным идентификатором
      * @param id уникальный идентификатор харты
-     * @throws IOException
-     * @throws ChartNotFoundException
+     * @throws IOException ошибка чтения или записи файла
+     * @throws ChartNotFoundException карта не найдена
      */
     @RequestMapping(path = "/chartas/{id}/", method = RequestMethod.DELETE)
-    public void deleteChart(@PathVariable String id)
+    public void deleteChart(@PathVariable Integer id)
             throws IOException, ChartNotFoundException {
 
         chartService.deleteChart(id);
