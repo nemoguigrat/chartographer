@@ -6,15 +6,16 @@ import ru.ivanov.intern.chartographer.model.Chart;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Repository
 public class ChartRepository {
     private final Map<Integer, Chart> charts;
 
-    private int chartId;
+    private AtomicInteger chartId;
 
     public ChartRepository(){
-        this.chartId = -1;
+        this.chartId = new AtomicInteger(-1);
         this.charts = new ConcurrentHashMap<>();
     }
 
@@ -31,9 +32,9 @@ public class ChartRepository {
     }
 
     public Chart save(Chart chart) {
-        chartId++;
-        chart.setId(chartId);
-        charts.put(chartId, chart);
+        int current_value = chartId.incrementAndGet();
+        chart.setId(current_value);
+        charts.put(current_value, chart);
         return chart;
     }
 }
